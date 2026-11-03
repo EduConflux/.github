@@ -1,0 +1,53 @@
+name: Backend CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'educonflux-backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'educonflux-backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  backend-test-and-build:
+    name: Backend Unit Tests & Package Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: educonflux-backend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Maven Unit Tests
+        run: mvn -B clean test
+
+      - name: Package JAR Artifact (Skip Tests)
+        run: mvn -B package -DskipTests
+
+      - name: Upload Surefire Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-test-reports
+          path: educonflux-backend/target/surefire-reports/
+          retention-days: 7
+
